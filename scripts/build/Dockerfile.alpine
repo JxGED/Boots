@@ -1,0 +1,51 @@
+FROM alpine
+ARG CC=gcc
+ARG ENV1=FOOBAR
+
+RUN apk update && apk add \
+	$CC \
+	bash \
+	build-base \
+	ccache \
+	coreutils \
+	git \
+	gnutls-dev \
+	libaio-dev \
+	libcap-dev \
+	libnet-dev \
+	libnl3-dev \
+	nftables \
+	pkgconfig \
+	protobuf-c-dev \
+	protobuf-dev \
+	python3 \
+	sudo
+
+COPY . /criu
+WORKDIR /criu
+ENV CC="ccache $CC" CCACHE_DIR=/tmp/.ccache CCACHE_NOCOMPRESS=1 $ENV1=yes
+RUN mv .ccache /tmp && make mrproper && ccache -sz && \
+	date && make -j $(nproc) CC="$CC" && date && ccache -s
+
+RUN apk add \
+	ip6tables \
+	iptables \
+	nftables \
+	iproute2 \
+	tar \
+	bash \
+	go \
+	e2fsprogs \
+	py-yaml \
+	py3-flake8 \
+	asciidoctor
+
+# The rpc test cases are running as user #1000, let's add the user
+RUN adduser -u 1000 -D test
+
+RUN pip3 install protobuf junit_xml
+
+# For zdtm we need an unversioned python binary
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+RUN make -C test/zdtm
