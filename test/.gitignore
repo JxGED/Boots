@@ -1,0 +1,7 @@
+/lib
+/lib64
+/bin
+/dev
+/dump
+/*.log
+/zdtm_ct
